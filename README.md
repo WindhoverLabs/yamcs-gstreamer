@@ -72,9 +72,9 @@ dataLinks:
       - name: "Test Pattern SMPTE to Lorenzo"
         description: "videotestsrc name=videotestsrc0 pattern=smpte	! x264enc name=encoder0 bitrate=2000 speed-preset=superfast tune=zerolatency key-int-max=30 insert-vui=true ! mpegtsmux name=muxer0 latency=0 ! rtpmp2tpay name=rtpmp2tpay0 ! udpsink name=udpsink0 host=172.16.100.208 port=5004 async=true "
       - name: "Test Pattern Checkers-8"
-        description: "videotestsrc name=videotestsrc0 pattern=checkers-8        ! autovideosink"
+        description: "videotestsrc name=videotestsrc0 pattern=checkers-8 ! autovideosink"
       - name: "Test Pattern Ball"
-        description: "videotestsrc name=videotestsrc0 pattern=ball              ! autovideosink"
+        description: "videotestsrc name=videotestsrc0 pattern=ball ! autovideosink"
     telemetry:
       - path: udpsink0/host
       - path: udpsink0/port
