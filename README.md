@@ -2,6 +2,10 @@
 
 **yamcs-gstreamer** is a YAMCS (Yet Another Mission Control System) plugin that integrates GStreamer pipelines into YAMCS. This plugin allows users to add, manage, and control multiple GStreamer pipelines directly from YAMCS, enabling sophisticated media processing and streaming capabilities within a mission control system.
 
+## Compatibility
+This has been tested with the following YAMCS versions:
+- v5.9.10
+  
 ## Features
 
 - **Multiple Pipeline Support:**  
