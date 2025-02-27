@@ -36,7 +36,6 @@ This has been tested with the following YAMCS versions:
 
 ### Installation
 
-[//]: # (TODO: Provide detailed installation instructions, including how to add the plugin to your YAMCS installation, Maven coordinates (if applicable), and any configuration steps.)
 
 1. Download or clone the repository.
 2. Build using Maven with `mvn clean install`
@@ -45,10 +44,8 @@ This has been tested with the following YAMCS versions:
 
 ## Usage
 
-[//]: # (TODO: Provide detailed usage instructions with examples on how to configure and use the plugin within YAMCS.)
-
 - **Configuring Pipelines:**  
-  Define one or more GStreamer pipelines in your YAMCS configuration file. Each pipeline can be controlled via YAMCS actions.
+  Define one or more GStreamer pipelines in your YAMCS configuration file. Each plugin instance can have 1 active pipeline but multiple preconfigured pipeline configurations.  Create multiple plugin instances for multiple simultaneously pipelines.
   
 - **Available Actions:**  
   - Set active pipeline (1 per instance)
@@ -58,7 +55,7 @@ This has been tested with the following YAMCS versions:
   - Write element properties using a path-like notation.
   - Set active pipelines.
   
-NOTE: Some GStreamer plugins are not quite fully compliant with the GStreamer API and requirements.  Some of these Actions may not work, may generate errors and may throw exceptions.  The plugin is designed to be resilient to this, generate an error message, but continue running.
+***NOTE***: Some GStreamer plugins are not quite fully compliant with the GStreamer API and requirements.  Some of these Actions may not work, may generate errors and may throw exceptions.  The plugin is designed to be resilient to this, generate an error message, but continue running.
 
 ## Configuration
 
@@ -92,33 +89,33 @@ dataLinks:
       - path: autovideosink0-actual-sink-xvimage/stats/dropped
 ```
 
-name
+**name**
 : This is the unique name you give to the plugin instance.
 
-class
+**class**
 : This must be "com.windhoverlabs.yamcs.media.GStreamerLink"
 
-activePipeline
+**activePipeline**
 : This is the name of the pipeline to activate at startup. 
 
 ### "pipeline" section
-name
+You can have as many pipeline configurations defined, but only one will be active at a time, per plugin instance.  Instantiate multiple plugins for multiple simultaneously active pipelines.
+
+**name**
 : This is the name of the pipeline.  This will appear in YAMCS Web and is used to activate pipelines at runtime.
 
-description
+**description**
 : This is the gstreamer pipeline description.  See [GStreamer documentation](https://gstreamer.freedesktop.org/documentation/tools/gst-launch.html) for more information.
 
 ### "telemetry" section
 Telemetry defined in this section will be displayed in YAMCS Web in both the "Links" display as well as the "Telemetry" display.  All telemetry will be added
 to the telemetry list, but will only be updated when the parameters are available.  It is possible that some parameters are not available with the currently active pipeline.  When this happens, the telemetry will go static.  No error will be thrown.  Which telemetry is updated depends on the telemetry defined and the pipeline active.
 
-path
+**path**
 : This is the path to the parameter in the form "elementname/propertyname[/subproperty...]"
 
 
 ## Development
-
-[//]: # (TODO: Include instructions for developers who wish to build or contribute to the project.)
 
 - Clone the repository.
 - Build with maven.
