@@ -1,5 +1,39 @@
+/****************************************************************************
+ *
+ *   Copyright (c) 2025 Windhover Labs, L.L.C. All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in
+ *    the documentation and/or other materials provided with the
+ *    distribution.
+ * 3. Neither the name Windhover Labs nor the names of its
+ *    contributors may be used to endorse or promote products derived
+ *    from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+ * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+ * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
+ * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
+ * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+ * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ *
+ *****************************************************************************/
+
 package com.windhoverlabs.yamcs.media.utils;
 
+import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -23,7 +57,7 @@ public class CustomRepresenter extends Representer {
    *
    * @param options the dumper options for customizing YAML output
    */
-  public CustomRepresenter(DumperOptions options) {
+  public CustomRepresenter(final DumperOptions options) {
     super(options);
   }
 
@@ -41,7 +75,10 @@ public class CustomRepresenter extends Representer {
    */
   @Override
   protected NodeTuple representJavaBeanProperty(
-      Object javaBean, Property property, Object propertyValue, Tag customTag) {
+      final Object javaBean,
+      final Property property,
+      final Object propertyValue,
+      final Tag customTag) {
     // Skip properties with null values to avoid including them in the YAML output.
     if (propertyValue == null) {
       return null;
@@ -59,20 +96,12 @@ public class CustomRepresenter extends Representer {
    * @return an ordered {@link Set} of {@link Property} objects, with "name" as the first element
    */
   @Override
-  protected Set<Property> getProperties(Class<?> type) {
+  protected Set<Property> getProperties(final Class<?> type) {
     Set<Property> properties = super.getProperties(type);
-    // Sort properties so that "name" comes first, followed by the rest in natural order.
     return properties.stream()
         .sorted(
-            (p1, p2) -> {
-              if (p1.getName().equals("name")) {
-                return -1;
-              } else if (p2.getName().equals("name")) {
-                return 1;
-              } else {
-                return p1.compareTo(p2);
-              }
-            })
+            Comparator.comparing((Property p) -> !p.getName().equals("name"))
+                .thenComparing(Property::compareTo))
         .collect(Collectors.toCollection(LinkedHashSet::new));
   }
 }

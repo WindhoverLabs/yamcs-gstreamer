@@ -1,3 +1,36 @@
+/****************************************************************************
+ *
+ *   Copyright (c) 2025 Windhover Labs, L.L.C. All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in
+ *    the documentation and/or other materials provided with the
+ *    distribution.
+ * 3. Neither the name Windhover Labs nor the names of its
+ *    contributors may be used to endorse or promote products derived
+ *    from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+ * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+ * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
+ * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
+ * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+ * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ *
+ *****************************************************************************/
+
 package com.windhoverlabs.yamcs.media.actions;
 
 import com.google.gson.JsonObject;
@@ -109,91 +142,96 @@ public class DumpAllElementsToFile extends LinkAction {
       // Create a Yaml instance with the custom representer and options.
       Yaml yaml = new Yaml(representer, options);
 
-      // List to hold the documentation for each element.
+      // Build documentation for each element factory.
       List<ElementDocs> elementDocsList = new ArrayList<>();
-      // Iterate over each element factory.
       for (ElementFactory elementFactory : elements) {
-        // Retrieve metadata for the element.
-        String name = elementFactory.getName();
-        String longName = elementFactory.getLongName();
-        String description = elementFactory.getDescription();
-
-        // Create an instance of the element to access its properties.
-        Element element =
-            elementFactory.create(name + "-instance"); // Provide a unique name for the instance.
-        List<PropertyDocs> propertyDocsList = new ArrayList<>();
-
-        // Retrieve and document properties of the element if the element instance is not null.
-        if (element != null) {
-          for (String propertyName : element.listPropertyNames()) {
-            if (propertyName != null) {
-              Object propertyValue = null;
-              try {
-                propertyValue = element.get(propertyName);
-
-                String propertyType;
-                List<String> enumValues = null;
-                if (propertyValue != null) {
-                  // Determine the property type and handle enums.
-                  Class<?> propertyClass = propertyValue.getClass();
-                  if (propertyClass.isEnum()) {
-                    propertyType = "Enum<" + propertyClass.getSimpleName() + ">";
-                    enumValues = new ArrayList<>();
-                    // Retrieve all enum constants.
-                    for (Object enumConstant : propertyClass.getEnumConstants()) {
-                      enumValues.add(enumConstant.toString());
-                    }
-                  } else {
-                    propertyType = propertyClass.getSimpleName();
-                  }
-                } else {
-                  // If property value is null, mark type as unknown.
-                  propertyType = "Unknown";
-                }
-
-                // Add property documentation for the current property.
-                propertyDocsList.add(
-                    new PropertyDocs(
-                        propertyName,
-                        propertyType, // Property type
-                        true, // Assume property is readable
-                        true, // Assume property is writable
-                        enumValues // List of enum values if applicable
-                        ));
-              } catch (IllegalArgumentException e) {
-                // Log a warning if the property cannot be retrieved.
-                internalLogger.warn(
-                    "Failed to get property '{}' for element '{}'", propertyName, name, e);
-                continue;
-              } catch (Exception e) {
-                // Log any other exception encountered while retrieving the property.
-                internalLogger.warn(
-                    "Failed to get property '{}' for element '{}'", propertyName, name, e);
-                continue;
-              }
-            }
-          }
-        }
-
-        // Create an ElementDocs object containing the element metadata and its properties.
-        elementDocsList.add(new ElementDocs(name, longName, description, propertyDocsList));
+        ElementDocs docs = createElementDocs(elementFactory);
+        elementDocsList.add(docs);
       }
 
       // Write the collected element documentation to the YAML file.
       try (FileWriter writer = new FileWriter(fileName)) {
         yaml.dump(elementDocsList, writer);
       } catch (IOException e) {
-        // Print stack trace and complete the result exceptionally if an I/O error occurs.
-        e.printStackTrace();
-        result.completeExceptionally(e); // Propagate the exception to the action result.
-        return; // Exit to avoid completing the result twice.
+        internalLogger.error("Failed to write YAML file", e);
+        result.completeExceptionally(e);
+        return;
       }
 
-      // Mark the action as complete.
       result.complete();
     } catch (Exception e) {
-      // Complete the action result exceptionally if any error occurs.
       result.completeExceptionally(e);
     }
+  }
+
+  /**
+   * Creates an ElementDocs object by extracting metadata and properties from the given element
+   * factory.
+   *
+   * @param elementFactory the element factory to process
+   * @return an ElementDocs object containing the element's metadata and properties
+   */
+  private ElementDocs createElementDocs(ElementFactory elementFactory) {
+    String name = elementFactory.getName();
+    String longName = elementFactory.getLongName();
+    String description = elementFactory.getDescription();
+
+    // Create an instance of the element to access its properties. A unique instance name is used.
+    Element element = elementFactory.create(name + "-instance");
+    List<PropertyDocs> propertyDocsList = new ArrayList<>();
+
+    if (element != null) {
+      propertyDocsList = extractPropertyDocs(element, name);
+    }
+
+    return new ElementDocs(name, longName, description, propertyDocsList);
+  }
+
+  /**
+   * Extracts property documentation from the given element.
+   *
+   * <p>This method iterates over all property names of the element, retrieves the property value,
+   * determines its type (including handling enum types), and creates a list of PropertyDocs.
+   *
+   * @param element the GStreamer element from which to extract properties
+   * @param elementName the name of the element (used for logging)
+   * @return a list of PropertyDocs for the element
+   */
+  private List<PropertyDocs> extractPropertyDocs(Element element, String elementName) {
+    List<PropertyDocs> propertyDocsList = new ArrayList<>();
+
+    for (String propertyName : element.listPropertyNames()) {
+      if (propertyName == null) {
+        continue;
+      }
+      try {
+        Object propertyValue = element.get(propertyName);
+        String propertyType;
+        List<String> enumValues = null;
+        if (propertyValue != null) {
+          Class<?> propertyClass = propertyValue.getClass();
+          if (propertyClass.isEnum()) {
+            propertyType = "Enum<" + propertyClass.getSimpleName() + ">";
+            enumValues = new ArrayList<>();
+            // Retrieve all enum constants.
+            for (Object enumConstant : propertyClass.getEnumConstants()) {
+              enumValues.add(enumConstant.toString());
+            }
+          } else {
+            propertyType = propertyClass.getSimpleName();
+          }
+        } else {
+          propertyType = "Unknown";
+        }
+        propertyDocsList.add(new PropertyDocs(propertyName, propertyType, true, true, enumValues));
+      } catch (IllegalArgumentException e) {
+        internalLogger.warn(
+            "Failed to get property '{}' for element '{}'", propertyName, elementName, e);
+      } catch (Exception e) {
+        internalLogger.warn(
+            "Failed to get property '{}' for element '{}'", propertyName, elementName, e);
+      }
+    }
+    return propertyDocsList;
   }
 }

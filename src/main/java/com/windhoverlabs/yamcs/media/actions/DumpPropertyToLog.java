@@ -1,3 +1,36 @@
+/****************************************************************************
+ *
+ *   Copyright (c) 2025 Windhover Labs, L.L.C. All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in
+ *    the documentation and/or other materials provided with the
+ *    distribution.
+ * 3. Neither the name Windhover Labs nor the names of its
+ *    contributors may be used to endorse or promote products derived
+ *    from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+ * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+ * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
+ * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
+ * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+ * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ *
+ *****************************************************************************/
+
 package com.windhoverlabs.yamcs.media.actions;
 
 import com.google.gson.JsonObject;
@@ -21,9 +54,9 @@ import org.yamcs.tctm.LinkAction;
  */
 public class DumpPropertyToLog extends LinkAction {
   // Logger for logging information and errors.
-  private static Logger internalLogger;
-  // GStreamerLink instance to access the active pipeline.
-  private GStreamerLink gStreamerLink;
+  private final Logger internalLogger;
+  // GStreamerLink instance used to access the active pipeline.
+  private final GStreamerLink gStreamerLink;
 
   /**
    * Constructs a new DumpPropertyToLog action.
@@ -33,7 +66,7 @@ public class DumpPropertyToLog extends LinkAction {
    */
   public DumpPropertyToLog(GStreamerLink gStreamerLink, Logger logger) {
     super("DumpPropertyToLog", "Dump a property to log");
-    internalLogger = logger;
+    this.internalLogger = logger;
     this.gStreamerLink = gStreamerLink;
   }
 
@@ -50,10 +83,9 @@ public class DumpPropertyToLog extends LinkAction {
    */
   @Override
   public Spec getSpec() {
-    Spec rootSpec = new Spec();
-    // Define a required string option for the property path.
-    rootSpec.addOption("path", OptionType.STRING).withRequired(true);
-    return rootSpec;
+    Spec spec = new Spec();
+    spec.addOption("path", OptionType.STRING).withRequired(true);
+    return spec;
   }
 
   /**
@@ -64,7 +96,7 @@ public class DumpPropertyToLog extends LinkAction {
    * pipeline using that path. The retrieved property value is then logged. If the pipeline is not
    * active or the property value cannot be retrieved, appropriate log messages are generated.
    *
-   * @param link the link on which the action is executed (not used directly in this implementation)
+   * @param link the link on which the action is executed (unused in this implementation)
    * @param request the JSON object containing the action parameters, including the "path" option
    * @param result the ActionResult to be completed after execution, indicating success or failure
    */
@@ -72,12 +104,10 @@ public class DumpPropertyToLog extends LinkAction {
   public void execute(Link link, JsonObject request, ActionResult result) {
     try {
       // Extract the property path from the JSON request.
-      String path = request.get("path").getAsString();
+      final String path = request.get("path").getAsString();
 
-      // Retrieve the active GStreamer pipeline from the GStreamerLink.
+      // Retrieve the active GStreamer pipeline.
       Pipeline pipeline = gStreamerLink.getActivePipeline();
-
-      // Check if the pipeline is active.
       if (pipeline == null) {
         internalLogger.info("DumpPropertyToLog: Pipeline is not active");
         result.complete();
@@ -87,17 +117,13 @@ public class DumpPropertyToLog extends LinkAction {
       // Read the property value using the provided path.
       String propertyValue = GStreamerUtils.readPropertyByPath(pipeline, path);
       if (propertyValue != null) {
-        // Log the retrieved property value.
         internalLogger.info("DumpPropertyToLog: {}", propertyValue);
       } else {
-        // Log an error if the property could not be read.
-        internalLogger.error("DumpPropertyToLog failed");
+        internalLogger.error("DumpPropertyToLog: Failed to retrieve property at path '{}'", path);
       }
 
-      // Mark the action result as complete.
       result.complete();
     } catch (ConfigurationException e) {
-      // Complete the action result exceptionally in case of configuration errors.
       result.completeExceptionally(e);
     }
   }

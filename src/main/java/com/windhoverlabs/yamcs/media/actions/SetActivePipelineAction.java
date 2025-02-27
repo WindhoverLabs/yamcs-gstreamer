@@ -1,3 +1,36 @@
+/****************************************************************************
+ *
+ *   Copyright (c) 2025 Windhover Labs, L.L.C. All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in
+ *    the documentation and/or other materials provided with the
+ *    distribution.
+ * 3. Neither the name Windhover Labs nor the names of its
+ *    contributors may be used to endorse or promote products derived
+ *    from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+ * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+ * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
+ * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
+ * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+ * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ *
+ *****************************************************************************/
+
 package com.windhoverlabs.yamcs.media.actions;
 
 import com.google.gson.JsonObject;
@@ -16,11 +49,11 @@ import org.yamcs.tctm.LinkAction;
  */
 public class SetActivePipelineAction extends LinkAction {
   // Logger for logging internal details of the action.
-  private Logger internalLogger;
+  private final Logger internalLogger;
   // The GStreamerLink instance used to manage GStreamer pipeline operations.
-  private GStreamerLink gstreamerLink;
+  private final GStreamerLink gstreamerLink;
   // The name of the pipeline to be activated.
-  String pipelineName;
+  private final String pipelineName;
 
   /**
    * Constructs a new {@code SetActivePipelineAction}.
@@ -33,8 +66,8 @@ public class SetActivePipelineAction extends LinkAction {
     // Create a unique action name and description using the pipeline name, with a push-button
     // style.
     super("set-pipeline-" + name, "Activate " + name, ActionStyle.PUSH_BUTTON);
-    internalLogger = logger;
-    pipelineName = name;
+    this.internalLogger = logger;
+    this.pipelineName = name;
     this.gstreamerLink = gstreamerLink;
   }
 
@@ -55,11 +88,11 @@ public class SetActivePipelineAction extends LinkAction {
   public void execute(Link link, JsonObject request, ActionResult result) {
     try {
       // Start the pipeline using the provided GStreamerLink and pipeline name.
-      this.gstreamerLink.startPipeline(pipelineName);
+      gstreamerLink.startPipeline(pipelineName);
       // Mark the action result as complete if the pipeline is successfully started.
       result.complete();
     } catch (ConfigurationException e) {
-      // If an error occurs (e.g., pipeline not set), complete the result exceptionally.
+      // Complete the action result exceptionally if an error occurs (e.g., pipeline not set).
       result.completeExceptionally(e);
     }
   }

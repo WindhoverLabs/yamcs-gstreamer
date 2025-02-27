@@ -1,3 +1,36 @@
+/****************************************************************************
+ *
+ *   Copyright (c) 2025 Windhover Labs, L.L.C. All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in
+ *    the documentation and/or other materials provided with the
+ *    distribution.
+ * 3. Neither the name Windhover Labs nor the names of its
+ *    contributors may be used to endorse or promote products derived
+ *    from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+ * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+ * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
+ * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
+ * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+ * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ *
+ *****************************************************************************/
+
 package com.windhoverlabs.yamcs.media.actions;
 
 import com.google.gson.JsonObject;
@@ -22,9 +55,9 @@ import org.yamcs.tctm.LinkAction;
  */
 public class DumpElementToLog extends LinkAction {
   // Logger for logging messages and errors.
-  private Logger internalLogger;
+  private final Logger internalLogger;
   // GStreamerLink instance used to access the active pipeline.
-  private GStreamerLink gStreamerLink;
+  private final GStreamerLink gStreamerLink;
 
   /**
    * Constructs a new DumpElementToLog action.
@@ -62,8 +95,8 @@ public class DumpElementToLog extends LinkAction {
    *
    * <p>This method retrieves the element name from the JSON request, obtains the active pipeline
    * from the GStreamerLink, and then attempts to retrieve the element by name. If the element is
-   * found, its details are serialized and logged. If the pipeline is not active, an informational
-   * message is logged.
+   * found, its details are serialized and logged. If the pipeline is not active or the element is
+   * not found, an informational or warning message is logged.
    *
    * @param link the link on which the action is executed (unused in this implementation)
    * @param request the JSON object containing the "name" parameter for the element
@@ -77,20 +110,24 @@ public class DumpElementToLog extends LinkAction {
 
       // Retrieve the active GStreamer pipeline.
       Pipeline pipeline = gStreamerLink.getActivePipeline();
-      if (pipeline != null) {
-        // Retrieve the element by name from the active pipeline.
-        Element element = pipeline.getElementByName(name);
-        if (element != null) {
-          // Serialize the element's details and log the output.
-          internalLogger.info("DumpElementToLog: {}", GStreamerUtils.serializeElement(element));
-        }
-        // Mark the action as successfully completed.
-        result.complete();
-      } else {
-        // Log an informational message if the pipeline is not active.
+      if (pipeline == null) {
         internalLogger.info("DumpElementToLog: Pipeline is not active");
         result.complete();
+        return;
       }
+
+      // Retrieve the element by name from the active pipeline.
+      Element element = pipeline.getElementByName(name);
+      if (element != null) {
+        // Serialize the element's details and log the output.
+        String elementDetails = GStreamerUtils.serializeElement(element);
+        internalLogger.info("DumpElementToLog: {}", elementDetails);
+      } else {
+        internalLogger.warn("DumpElementToLog: Element with name '{}' not found", name);
+      }
+
+      // Mark the action as successfully completed.
+      result.complete();
     } catch (ConfigurationException e) {
       // Complete the action result exceptionally if a configuration error occurs.
       result.completeExceptionally(e);

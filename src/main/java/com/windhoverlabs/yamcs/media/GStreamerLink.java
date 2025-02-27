@@ -1,3 +1,36 @@
+/****************************************************************************
+ *
+ *   Copyright (c) 2025 Windhover Labs, L.L.C. All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in
+ *    the documentation and/or other materials provided with the
+ *    distribution.
+ * 3. Neither the name Windhover Labs nor the names of its
+ *    contributors may be used to endorse or promote products derived
+ *    from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+ * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+ * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
+ * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
+ * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+ * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ *
+ *****************************************************************************/
+
 package com.windhoverlabs.yamcs.media;
 
 import com.windhoverlabs.yamcs.media.actions.DumpAllElementNamesToLog;
@@ -8,7 +41,6 @@ import com.windhoverlabs.yamcs.media.actions.SetActivePipelineAction;
 import com.windhoverlabs.yamcs.media.actions.WritePropertyByPath;
 import com.windhoverlabs.yamcs.media.utils.GStreamerUtils;
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.List;
 import org.freedesktop.gstreamer.Bus;
 import org.freedesktop.gstreamer.Gst;
@@ -47,7 +79,7 @@ public class GStreamerLink extends AbstractLink implements SystemParametersProdu
   // Logger for internal logging.
   private static final Logger internalLogger = LoggerFactory.getLogger(GStreamerLink.class);
   // List of telemetry parameters configured for this link.
-  private LinkedList<Parameter> telemetryParameters;
+  private List<Parameter> telemetryParameters;
   // The currently active GStreamer pipeline.
   private Pipeline pipeline;
   // The name of the active pipeline.
@@ -64,8 +96,8 @@ public class GStreamerLink extends AbstractLink implements SystemParametersProdu
   @Override
   public void setupSystemParameters(SystemParametersService sysParamService) {
     super.setupSystemParameters(sysParamService);
+    telemetryParameters = new ArrayList<>();
 
-    telemetryParameters = new LinkedList<>();
     // Retrieve telemetry configurations.
     List<YConfiguration> telemetry = config.getConfigList("telemetry");
     for (YConfiguration telemetryConfig : telemetry) {
@@ -77,7 +109,7 @@ public class GStreamerLink extends AbstractLink implements SystemParametersProdu
           name = telemetryConfig.getString("path");
         }
       } catch (Exception e) {
-        // If an exception occurs, fallback to using the "path" field.
+        // Fallback to using the "path" field if any exception occurs.
         name = telemetryConfig.getString("path");
       }
       // Create a system parameter using the telemetry path.
@@ -118,7 +150,7 @@ public class GStreamerLink extends AbstractLink implements SystemParametersProdu
       // Collect additional system parameters from the superclass.
       super.collectSystemParameters(time, list);
     } catch (Exception e) {
-      log.error("Exception caught when collecting link system parameters", e);
+      internalLogger.error("Exception caught when collecting link system parameters", e);
     }
     return list;
   }
@@ -176,7 +208,6 @@ public class GStreamerLink extends AbstractLink implements SystemParametersProdu
   public void init(String yamcsInstance, String serviceName, YConfiguration config)
       throws ConfigurationException {
     super.init(yamcsInstance, serviceName, config);
-
     this.config = config;
     // Get the active pipeline name from the configuration.
     activePipeline = config.getString("activePipeline");
@@ -211,7 +242,6 @@ public class GStreamerLink extends AbstractLink implements SystemParametersProdu
       status = Status.DISABLED;
     } else {
       org.freedesktop.gstreamer.State state = pipeline.getState();
-
       // Determine the status based on the pipeline's state.
       switch (state) {
         case PLAYING:
@@ -227,7 +257,6 @@ public class GStreamerLink extends AbstractLink implements SystemParametersProdu
           status = Status.UNAVAIL;
       }
     }
-
     return status;
   }
 
@@ -249,7 +278,7 @@ public class GStreamerLink extends AbstractLink implements SystemParametersProdu
     addAction(new WritePropertyByPath(this, internalLogger));
 
     // Register actions to set active pipelines based on the configuration.
-    List<YConfiguration> pipelines = this.config.getConfigList("pipelines");
+    List<YConfiguration> pipelines = config.getConfigList("pipelines");
     for (YConfiguration pipelineConfig : pipelines) {
       addAction(
           new SetActivePipelineAction(this, internalLogger, pipelineConfig.getString("name")));
@@ -257,10 +286,7 @@ public class GStreamerLink extends AbstractLink implements SystemParametersProdu
 
     // Notify that the link has started.
     notifyStarted();
-
-    // Enable the link.
     super.enable();
-
     internalLogger.info("GStreamer started");
   }
 
@@ -282,11 +308,9 @@ public class GStreamerLink extends AbstractLink implements SystemParametersProdu
   @Override
   protected void doStop() {
     internalLogger.info("GStreamer stopping");
-
     stopPipeline();
     Gst.quit();
     notifyStopped();
-
     internalLogger.info("GStreamer stopped");
   }
 
@@ -323,55 +347,46 @@ public class GStreamerLink extends AbstractLink implements SystemParametersProdu
    */
   @Override
   public String getDetailedStatus() {
-    String status = "";
-
-    if (activePipeline == null) {
-      status = status + "<NO ACTIVE PIPELINE>";
-    } else {
-      status = status + "\"" + activePipeline + "\"";
-    }
-
-    status = status + " : ";
-
-    if (pipeline == null) {
-      status = status + "NOT RUNNING";
-    } else {
-      status = status + pipeline.getState().toString();
-    }
-
+    String status =
+        (activePipeline == null) ? "<NO ACTIVE PIPELINE>" : "\"" + activePipeline + "\"";
+    status += " : ";
+    status += (pipeline == null) ? "NOT RUNNING" : pipeline.getState().toString();
     return status;
   }
 
   /**
    * Stops the active GStreamer pipeline.
    *
-   * <p>This method stops the pipeline, waits for it to reach the {@code NULL} state, disposes of
-   * it, and logs the shutdown process.
+   * <p>This method stops the pipeline, waits (with timeout) for it to reach the {@code NULL} state,
+   * disposes of it, and logs the shutdown process.
    */
   public void stopPipeline() {
-    System.out.println("stopPipeline 1");
+    internalLogger.debug("stopPipeline initiated");
     if (pipeline != null) {
-      System.out.println("stopPipeline 2");
       internalLogger.info("Stopping pipeline");
       pipeline.stop();
-      System.out.println("stopPipeline 3");
 
-      // Wait until the pipeline reaches the NULL state.
+      // Wait until the pipeline reaches the NULL state with a timeout of 5 seconds.
+      long timeout = 5000; // 5 seconds
+      long startTime = System.currentTimeMillis();
       while (pipeline.getState() != org.freedesktop.gstreamer.State.NULL) {
-        System.out.println("stopPipeline 4");
+        internalLogger.debug("Waiting for pipeline to stop...");
         try {
           Thread.sleep(100);
         } catch (InterruptedException e) {
           Thread.currentThread().interrupt();
           internalLogger.error("Interrupted while waiting for pipeline to stop", e);
+          break;
+        }
+        if (System.currentTimeMillis() - startTime > timeout) {
+          internalLogger.warn("Timeout while waiting for pipeline to stop");
+          break;
         }
       }
 
-      System.out.println("stopPipeline 6");
       pipeline.dispose();
       pipeline = null;
       internalLogger.info("Pipeline stopped");
-      // super.disable();
     }
   }
 
@@ -385,20 +400,20 @@ public class GStreamerLink extends AbstractLink implements SystemParametersProdu
    * @param pipelineName the name of the pipeline to start
    */
   public void startPipeline(String pipelineName) {
-    System.out.println("startPipeline 1");
-    // If a pipeline is already running, stop it.
+    internalLogger.debug("startPipeline initiated for pipeline: {}", pipelineName);
+    // Stop any currently running pipeline.
     if (pipeline != null) {
       stopPipeline();
     }
 
-    // Retrieve the pipeline configuration by name.
+    // Retrieve the pipeline configuration by name using a stream.
     YConfiguration pipelineConfig = getPipelineConfigByName(pipelineName);
     if (pipelineConfig == null) {
-      internalLogger.error("Pipeline not found: " + pipelineName);
+      internalLogger.error("Pipeline not found: {}", pipelineName);
       return;
     }
 
-    // Get the pipeline description and create the pipeline.
+    // Create the pipeline from its description.
     String pipelineDescription = pipelineConfig.getString("description");
     pipeline = (Pipeline) Gst.parseLaunch(pipelineDescription);
     if (pipeline == null) {
@@ -408,66 +423,67 @@ public class GStreamerLink extends AbstractLink implements SystemParametersProdu
     activePipeline = pipelineName;
     pipeline.setName("my_pipeline");
 
-    // Set up the bus to handle pipeline messages.
-    Bus bus = pipeline.getBus();
-    bus.connect(
-        new Bus.MESSAGE() {
-          @Override
-          public void busMessage(Bus bus, Message message) {
-            handleBusMessage(message);
-          }
-
-          /**
-           * Handles incoming messages from the GStreamer bus.
-           *
-           * <p>This method processes various message types (ERROR, WARNING, INFO, TAG, BUFFERING,
-           * NEED_CONTEXT, etc.) and logs them appropriately.
-           *
-           * @param message the GStreamer message to handle
-           */
-          private void handleBusMessage(Message message) {
-            GstObject source = message.getSource();
-            switch (message.getType()) {
-              case ERROR:
-                ErrorMessage errorMessage = (ErrorMessage) message;
-                internalLogger.error("{}: {}", source, errorMessage.toString());
-                break;
-              case WARNING:
-                WarningMessage warningMessage = (WarningMessage) message;
-                internalLogger.warn("{}: {}", source, warningMessage.toString());
-                break;
-              case STATE_CHANGED:
-                // Handle state changed messages if needed.
-                break;
-              case INFO:
-                InfoMessage infoMessage = (InfoMessage) message;
-                internalLogger.info("{}: {}", source, infoMessage.toString());
-                break;
-              case TAG:
-                TagMessage tagMessage = (TagMessage) message;
-                internalLogger.info("TAG from {}: {}", source, tagMessage.getTagList().toString());
-                break;
-              case BUFFERING:
-                BufferingMessage bufferingMessage = (BufferingMessage) message;
-                int percent = bufferingMessage.getPercent();
-                internalLogger.info("BUFFERING from {}: {}%", source, percent);
-                break;
-              case NEED_CONTEXT:
-                NeedContextMessage needContextMessage = (NeedContextMessage) message;
-                internalLogger.debug(
-                    "NEED_CONTEXT from {}: {}", source, needContextMessage.getContextType());
-                break;
-              default:
-                internalLogger.debug(
-                    "{} from {}: {}", message.getType().toString(), source, message);
-                break;
-            }
-          }
-        });
-
-    // Start the pipeline.
+    // Setup bus message handling.
+    setupBus(pipeline.getBus());
     pipeline.play();
-    // super.enable();
+  }
+
+  /**
+   * Sets up the GStreamer bus for handling messages.
+   *
+   * <p>This method connects a lambda to the bus message signal and delegates handling of each
+   * message to {@link #handleBusMessage(Message)}.
+   *
+   * @param bus the GStreamer bus from the active pipeline
+   */
+  private void setupBus(Bus bus) {
+    bus.connect((Bus.MESSAGE) (b, message) -> handleBusMessage(message));
+  }
+
+  /**
+   * Handles incoming messages from the GStreamer bus.
+   *
+   * <p>This method processes various message types (ERROR, WARNING, INFO, TAG, BUFFERING,
+   * NEED_CONTEXT, etc.) and logs them appropriately.
+   *
+   * @param message the GStreamer message to handle
+   */
+  private void handleBusMessage(Message message) {
+    GstObject source = message.getSource();
+    switch (message.getType()) {
+      case ERROR:
+        ErrorMessage errorMessage = (ErrorMessage) message;
+        internalLogger.error("{}: {}", source, errorMessage.toString());
+        break;
+      case WARNING:
+        WarningMessage warningMessage = (WarningMessage) message;
+        internalLogger.warn("{}: {}", source, warningMessage.toString());
+        break;
+      case STATE_CHANGED:
+        // Optionally handle state changed messages.
+        break;
+      case INFO:
+        InfoMessage infoMessage = (InfoMessage) message;
+        internalLogger.info("{}: {}", source, infoMessage.toString());
+        break;
+      case TAG:
+        TagMessage tagMessage = (TagMessage) message;
+        internalLogger.info("TAG from {}: {}", source, tagMessage.getTagList().toString());
+        break;
+      case BUFFERING:
+        BufferingMessage bufferingMessage = (BufferingMessage) message;
+        int percent = bufferingMessage.getPercent();
+        internalLogger.info("BUFFERING from {}: {}%", source, percent);
+        break;
+      case NEED_CONTEXT:
+        NeedContextMessage needContextMessage = (NeedContextMessage) message;
+        internalLogger.debug(
+            "NEED_CONTEXT from {}: {}", source, needContextMessage.getContextType());
+        break;
+      default:
+        internalLogger.debug("{} from {}: {}", message.getType().toString(), source, message);
+        break;
+    }
   }
 
   /**
@@ -477,12 +493,9 @@ public class GStreamerLink extends AbstractLink implements SystemParametersProdu
    * @return the {@link YConfiguration} for the specified pipeline, or {@code null} if not found
    */
   public YConfiguration getPipelineConfigByName(String name) {
-    List<YConfiguration> pipelines = config.getConfigList("pipelines");
-    for (YConfiguration pipelineConfig : pipelines) {
-      if (pipelineConfig.getString("name").equals(name)) {
-        return pipelineConfig;
-      }
-    }
-    return null;
+    return config.getConfigList("pipelines").stream()
+        .filter(pipelineConfig -> pipelineConfig.getString("name").equals(name))
+        .findFirst()
+        .orElse(null);
   }
 }

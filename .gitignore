@@ -1,0 +1,10 @@
+# Maven build output
+/target/
+
+# Maven Shade Plugin generated file
+dependency-reduced-pom.xml
+
+# IntelliJ IDEA project files
+*.iml
+.idea/
+

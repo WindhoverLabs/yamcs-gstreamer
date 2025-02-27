@@ -1,3 +1,36 @@
+/****************************************************************************
+ *
+ *   Copyright (c) 2025 Windhover Labs, L.L.C. All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in
+ *    the documentation and/or other materials provided with the
+ *    distribution.
+ * 3. Neither the name Windhover Labs nor the names of its
+ *    contributors may be used to endorse or promote products derived
+ *    from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+ * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+ * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
+ * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
+ * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+ * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ *
+ *****************************************************************************/
+
 package com.windhoverlabs.yamcs.media.utils;
 
 import org.freedesktop.gstreamer.Element;
@@ -26,19 +59,17 @@ public class GStreamerUtils {
    * @param element the GStreamer element to serialize
    * @return a string representation of the element's properties
    */
-  public static String serializeElement(Element element) {
-    StringBuilder sb = new StringBuilder();
+  public static String serializeElement(final Element element) {
+    final StringBuilder sb = new StringBuilder();
     // Append the element's name as the header.
     sb.append("Element: ").append(element.getName()).append("\n");
 
     // Loop through each property name available in the element.
-    for (String propertyName : element.listPropertyNames()) {
+    for (final String propertyName : element.listPropertyNames()) {
       try {
-        // Retrieve the property value.
-        Object propertyValue = element.get(propertyName);
+        final Object propertyValue = element.get(propertyName);
         sb.append(propertyName).append(": ").append(propertyValue).append("\n");
       } catch (Exception e) {
-        // In case of an exception, indicate that there was an error retrieving the value.
         sb.append(propertyName).append(": ").append("Error retrieving value").append("\n");
       }
     }
@@ -56,62 +87,46 @@ public class GStreamerUtils {
    * @param path the path to the property (e.g., "elementname/propertyname")
    * @return the string representation of the property value, or an error message if not found
    */
-  public static String readPropertyByPath(Pipeline pipeline, String path) {
-    // Split the path into segments using "/" as the delimiter.
-    String[] parts = path.split("/");
+  public static String readPropertyByPath(final Pipeline pipeline, final String path) {
+    final String[] parts = path.split("/");
     if (parts.length < 2) {
       return "Invalid path: path must be in the format 'elementname/propertyname'.";
     }
 
-    // Extract the element name and the remaining property path.
-    String elementName = parts[0];
-    String propertyPath =
-        path.substring(elementName.length() + 1); // Remove the element name and the following "/"
-
-    // Retrieve the element from the pipeline by its name.
-    Element element = pipeline.getElementByName(elementName);
+    final String elementName = parts[0];
+    final String propertyPath =
+        path.substring(elementName.length() + 1); // Remove element name and "/"
+    final Element element = pipeline.getElementByName(elementName);
     if (element == null) {
       return "Element not found: " + elementName;
     }
 
-    // Split the property path to handle nested properties.
-    String[] propertyParts = propertyPath.split("/");
+    final String[] propertyParts = propertyPath.split("/");
     if (propertyParts.length == 0) {
       return "Invalid property path: path is empty.";
     }
 
-    // Start traversing from the element.
     Object current = element;
-
-    // Iterate over each part of the property path.
-    for (String part : propertyParts) {
-      // If at any point current becomes null, the full path is not valid.
+    for (final String part : propertyParts) {
       if (current == null) {
         return "Path not found: " + path;
       }
 
-      // If the current object is an Element, try to get its property.
       if (current instanceof Element) {
-        Element el = (Element) current;
+        final Element el = (Element) current;
         try {
           current = el.get(part);
         } catch (Exception e) {
-          // If property retrieval fails, return an error.
           return "Property not found: " + part;
         }
-      }
-      // If the current object is a Structure, try to get the value associated with the field.
-      else if (current instanceof Structure) {
-        Structure structure = (Structure) current;
+      } else if (current instanceof Structure) {
+        final Structure structure = (Structure) current;
         current = structure.getValue(part);
-      }
-      // If the current object is neither an Element nor a Structure, the path is invalid.
-      else {
+      } else {
         return "Path not found: " + part + " is not a structure or element.";
       }
     }
 
-    // Return the string representation of the final property value.
     return current != null ? current.toString() : "null";
   }
 
@@ -129,56 +144,43 @@ public class GStreamerUtils {
    * @return the string representation of the final value, or an error message if the operation
    *     fails
    */
-  public static String writePropertyByPath(Pipeline pipeline, String path, String value) {
-    // Split the path into segments using "/" as the delimiter.
-    String[] parts = path.split("/");
+  public static String writePropertyByPath(
+      final Pipeline pipeline, final String path, final String value) {
+    final String[] parts = path.split("/");
     if (parts.length < 2) {
       return "Invalid path: path must be in the format 'elementname/propertyname'.";
     }
 
-    // Extract the element name and the remaining property path.
-    String elementName = parts[0];
-    String propertyPath =
-        path.substring(elementName.length() + 1); // Remaining path after the element name
-
-    // Retrieve the element from the pipeline by its name.
-    Element element = pipeline.getElementByName(elementName);
+    final String elementName = parts[0];
+    final String propertyPath = path.substring(elementName.length() + 1);
+    final Element element = pipeline.getElementByName(elementName);
     if (element == null) {
       return "Element not found: " + elementName;
     }
 
-    // Split the property path to handle nested properties.
-    String[] propertyParts = propertyPath.split("/");
+    final String[] propertyParts = propertyPath.split("/");
     if (propertyParts.length == 0) {
       return "Invalid property path: path is empty.";
     }
 
-    // Start traversing from the element.
     Object current = element;
-
-    // Iterate over each part of the property path.
-    for (String part : propertyParts) {
+    for (final String part : propertyParts) {
       if (current == null) {
         return "Path not found: " + path;
       }
-
-      // Only Elements are currently supported for writing properties.
       if (current instanceof Element) {
-        Element el = (Element) current;
+        final Element el = (Element) current;
         try {
           // Attempt to write the property value.
           writeProperty(value, el, part);
         } catch (Exception e) {
-          // If property writing fails, return an error.
           return "Property not found: " + part;
         }
       } else {
-        // If the current object is not an Element, the path is invalid.
         return "Path not found: " + part + " is not a structure or element.";
       }
     }
 
-    // Return the string representation of the current value.
     return current != null ? current.toString() : "null";
   }
 
@@ -195,12 +197,10 @@ public class GStreamerUtils {
    * @param propertyName the name of the property to be set
    * @return {@code true} if the property was successfully set; {@code false} otherwise
    */
-  public static boolean writeProperty(String value, Element element, String propertyName) {
+  public static boolean writeProperty(
+      final String value, final Element element, final String propertyName) {
     try {
-      // Retrieve the current value of the property to determine its type.
-      Object currentValue = element.get(propertyName);
-
-      // Convert the provided string value to the appropriate type and set the property.
+      final Object currentValue = element.get(propertyName);
       if (currentValue instanceof Integer) {
         element.set(propertyName, Integer.parseInt(value));
       } else if (currentValue instanceof Long) {
@@ -214,16 +214,13 @@ public class GStreamerUtils {
       } else if (currentValue instanceof String) {
         element.set(propertyName, value);
       } else if (currentValue instanceof Character) {
-        // Use the first character of the string as the property value.
         element.set(propertyName, value.charAt(0));
       } else {
-        // Log a warning if the property type is unsupported.
         logger.warn("Unsupported property type: {}", currentValue.getClass().getSimpleName());
         return false;
       }
       return true;
     } catch (Exception e) {
-      // Log the error if setting the property fails.
       logger.error("Failed to set property: {}", e.getMessage());
       return false;
     }
