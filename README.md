@@ -5,6 +5,9 @@
 ## Compatibility
 This has been tested with the following YAMCS versions:
 - v5.9.10
+
+Plugin artifact versions use a four-part scheme: `YAMCS_MAJOR.YAMCS_MINOR.YAMCS_PATCH.PLUGIN_UPDATE`.
+The current plugin version is `5.9.10.1`.
   
 ## Features
 
@@ -26,13 +29,16 @@ This has been tested with the following YAMCS versions:
 ### Prerequisites
 
 - **YAMCS:**  
-  [Insert YAMCS version requirements and links to YAMCS documentation here.]
+  This plugin is designed and tested for YAMCS `5.9.10`.
 
 - **GStreamer:**  
-  [Insert GStreamer version requirements and installation instructions here.]
+  A local GStreamer installation is required at runtime so the Java bindings can create and run pipelines.
 
 - **Java:**  
-  [Insert Java version and any additional prerequisites here.]
+  A Java Development Kit is required for building and testing. The project has been built and tested with OpenJDK `17`.
+
+- **Maven:**  
+  Maven `3.x` is required to build the plugin, run the unit tests, and generate the coverage report.
 
 ### Installation
 
@@ -41,6 +47,42 @@ This has been tested with the following YAMCS versions:
 2. Build using Maven with `mvn clean install`
 3. Copy the target/yamcs-gstreamer-<version>.jar to the YAMCS lib directory.
 3. Configure YAMCS to load the plugin as described in [Configuration](#configuration).
+
+### Build
+
+Build the plugin jar and bundle:
+
+```bash
+mvn clean install
+```
+
+This compiles the code, runs the unit tests, and produces build artifacts in `target/`.
+
+### Unit Tests
+
+Run the unit test suite:
+
+```bash
+mvn test
+```
+
+The unit tests include requirement traceability comments that reference IDs from `REQUIREMENTS.md`.
+
+### Coverage Report
+
+Generate the code coverage report:
+
+```bash
+mvn test
+```
+
+The JaCoCo report is generated automatically during the test phase and written to:
+
+```text
+target/site/jacoco/index.html
+```
+
+To view it, open `target/site/jacoco/index.html` in a web browser.
 
 ## Usage
 
@@ -118,7 +160,9 @@ to the telemetry list, but will only be updated when the parameters are availabl
 ## Development
 
 - Clone the repository.
-- Build with maven.
+- Build with `mvn clean install`.
+- Run unit tests with `mvn test`.
+- View the JaCoCo coverage report at `target/site/jacoco/index.html`.
 - Copy the .jar file to the YAMCS lib directory.  You can also add a symbolic link from the YAMCS lib directory to the target directory to simplify development.
 
 ## Future Work
