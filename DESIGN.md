@@ -16,7 +16,7 @@ If implementation changes invalidate this document, update both documents togeth
 
 ## System Context
 
-`yamcs-gstreamer` is a YAMCS datalink plugin implemented as a Java Maven project. Its job is to let a YAMCS link instance own one live GStreamer pipeline, expose selected pipeline properties as YAMCS system parameters, and provide operator actions for inspection and runtime control.
+`yamcs-gstreamer` is a YAMCS datalink plugin implemented as a Java Maven project. Its job is to let a YAMCS link instance own one live GStreamer pipeline, expose selected pipeline properties as YAMCS system parameters, and provide operator actions for inspection and runtime control. The current maintained compatibility target is YAMCS `5.13.0`.
 
 Primary runtime technologies:
 

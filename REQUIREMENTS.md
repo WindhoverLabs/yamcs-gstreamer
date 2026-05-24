@@ -14,7 +14,7 @@ Each requirement is written to be observable and, where practical, verifiable by
 
 ## Scope
 
-`yamcs-gstreamer` is a YAMCS datalink plugin that embeds GStreamer pipeline control into YAMCS. A single plugin instance manages exactly one active GStreamer pipeline at a time, while allowing multiple named pipeline definitions to be configured for later activation.
+`yamcs-gstreamer` is a YAMCS datalink plugin that embeds GStreamer pipeline control into YAMCS. A single plugin instance manages exactly one active GStreamer pipeline at a time, while allowing multiple named pipeline definitions to be configured for later activation. The current maintained compatibility target is YAMCS `5.13.0`.
 
 ## Definitions
 

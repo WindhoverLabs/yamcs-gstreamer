@@ -1,11 +1,8 @@
 package com.windhoverlabs.yamcs.media.actions;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -57,7 +54,8 @@ public class GStreamerActionTest {
     ActionResult result = new ActionResult();
 
     try (MockedStatic<GStreamerUtils> utils = Mockito.mockStatic(GStreamerUtils.class)) {
-      utils.when(() -> GStreamerUtils.readPropertyByPath(pipeline, "encoder0/bitrate"))
+      utils
+          .when(() -> GStreamerUtils.readPropertyByPath(pipeline, "encoder0/bitrate"))
           .thenReturn("2048");
 
       action.execute(mock(Link.class), request, result);
@@ -166,7 +164,8 @@ public class GStreamerActionTest {
     ActionResult result = new ActionResult();
 
     try (MockedStatic<GStreamerUtils> utils = Mockito.mockStatic(GStreamerUtils.class)) {
-      utils.when(() -> GStreamerUtils.writePropertyByPath(pipeline, "encoder0/bitrate", "4096"))
+      utils
+          .when(() -> GStreamerUtils.writePropertyByPath(pipeline, "encoder0/bitrate", "4096"))
           .thenReturn("encoder0");
 
       action.execute(mock(Link.class), request, result);

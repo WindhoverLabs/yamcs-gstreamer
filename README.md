@@ -4,10 +4,10 @@
 
 ## Compatibility
 This has been tested with the following YAMCS versions:
-- v5.9.10
+- v5.13.0
 
 Plugin artifact versions use a four-part scheme: `YAMCS_MAJOR.YAMCS_MINOR.YAMCS_PATCH.PLUGIN_UPDATE`.
-The current plugin version is `5.9.10.1`.
+The current plugin version is `5.13.0.1`.
   
 ## Features
 
@@ -29,7 +29,7 @@ The current plugin version is `5.9.10.1`.
 ### Prerequisites
 
 - **YAMCS:**  
-  This plugin is designed and tested for YAMCS `5.9.10`.
+  This plugin is designed and tested for YAMCS `5.13.0`.
 
 - **GStreamer:**  
   A local GStreamer installation is required at runtime so the Java bindings can create and run pipelines.
@@ -83,6 +83,14 @@ target/site/jacoco/index.html
 ```
 
 To view it, open `target/site/jacoco/index.html` in a web browser.
+
+### Formatting
+
+Apply the configured Java formatter:
+
+```bash
+mvn spotless:apply
+```
 
 ## Usage
 

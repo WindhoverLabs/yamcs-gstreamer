@@ -49,6 +49,7 @@ public class CustomRepresenterTest {
             Collections.singletonList(new PropertyDocs("pattern", "String", true, true, null)));
     String dumped = yaml.dump(elementDocs);
 
-    assertTrue(dumped.indexOf("name: videotestsrc") < dumped.indexOf("longName: Video Test Source"));
+    assertTrue(
+        dumped.indexOf("name: videotestsrc") < dumped.indexOf("longName: Video Test Source"));
   }
 }

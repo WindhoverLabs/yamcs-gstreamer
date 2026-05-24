@@ -2,7 +2,6 @@ package com.windhoverlabs.yamcs.media;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -78,7 +77,8 @@ public class GStreamerLinkTest {
 
     link.setupSystemParameters(service);
 
-    verify(service).createSystemParameter("links/video-link/udpsink0/host", Type.STRING, "UDP Host");
+    verify(service)
+        .createSystemParameter("links/video-link/udpsink0/host", Type.STRING, "UDP Host");
     verify(parameter).setLongDescription("udpsink0/host");
   }
 
@@ -91,7 +91,8 @@ public class GStreamerLinkTest {
     YConfiguration pipelineConfig = link.getPipelineConfigByName("ball");
 
     assertNotNull(pipelineConfig);
-    assertEquals("videotestsrc name=src0 pattern=ball ! fakesink", pipelineConfig.getString("description"));
+    assertEquals(
+        "videotestsrc name=src0 pattern=ball ! fakesink", pipelineConfig.getString("description"));
   }
 
   @Test
@@ -144,7 +145,8 @@ public class GStreamerLinkTest {
 
   private static Map<String, Object> configWithTelemetry() {
     Map<String, Object> root = new LinkedHashMap<>();
-    root.put("telemetry", Collections.singletonList(mapOf("path", "udpsink0/host", "name", "UDP Host")));
+    root.put(
+        "telemetry", Collections.singletonList(mapOf("path", "udpsink0/host", "name", "UDP Host")));
     root.put("pipelines", Collections.emptyList());
     return root;
   }
@@ -154,8 +156,10 @@ public class GStreamerLinkTest {
     root.put(
         "pipelines",
         Arrays.asList(
-            mapOf("name", "smpte", "description", "videotestsrc name=src0 pattern=smpte ! fakesink"),
-            mapOf("name", "ball", "description", "videotestsrc name=src0 pattern=ball ! fakesink")));
+            mapOf(
+                "name", "smpte", "description", "videotestsrc name=src0 pattern=smpte ! fakesink"),
+            mapOf(
+                "name", "ball", "description", "videotestsrc name=src0 pattern=ball ! fakesink")));
     root.put("telemetry", Collections.emptyList());
     return root;
   }
